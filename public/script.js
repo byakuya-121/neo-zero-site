@@ -22,7 +22,6 @@ const floatTags = document.querySelectorAll('.float-tag');
 let mouseX = 0, mouseY = 0;
 let targetX = 0, targetY = 0;
 
-// モバイルで過剰に動かないよう調整
 const isMobile = window.innerWidth < 768;
 
 if (!isMobile) {
@@ -106,15 +105,15 @@ drawMatrix();
 
 document.getElementById('matrixToggle').addEventListener('click', () => {
     isMatrixActive = !isMatrixActive;
-    playBeep(440, 0.05);
+    playClickSound();
     showToast(isMatrixActive ? 'Matrix Rain Activated.' : 'Matrix Rain Deactivated.', 'info');
 });
 
 // ----------------------------------------------------
-// 3. WEB AUDIO API SYNTHESIZER
+// 3. WEB AUDIO API SYNTHESIZER (CYBER AUDIO ENGINE)
 // ----------------------------------------------------
 let audioCtx = null;
-let isSoundEnabled = false;
+let isSoundEnabled = true;
 
 function initAudio() {
     if (!audioCtx) {
@@ -122,32 +121,122 @@ function initAudio() {
     }
 }
 
-function playBeep(freq = 600, duration = 0.05, type = 'sine') {
+// クリック音
+function playClickSound() {
     if (!isSoundEnabled) return;
     initAudio();
     try {
+        const now = audioCtx.currentTime;
         const osc = audioCtx.createOscillator();
         const gain = audioCtx.createGain();
-        osc.type = type;
-        osc.frequency.setValueAtTime(freq, audioCtx.currentTime);
-        gain.gain.setValueAtTime(0.04, audioCtx.currentTime);
-        gain.gain.exponentialRampToValueAtTime(0.001, audioCtx.currentTime + duration);
+        osc.type = 'sine';
+        osc.frequency.setValueAtTime(1200, now);
+        osc.frequency.exponentialRampToValueAtTime(400, now + 0.04);
+        gain.gain.setValueAtTime(0.05, now);
+        gain.gain.exponentialRampToValueAtTime(0.001, now + 0.04);
         osc.connect(gain);
         gain.connect(audioCtx.destination);
-        osc.start();
-        osc.stop(audioCtx.currentTime + duration);
+        osc.start(now);
+        osc.stop(now + 0.04);
     } catch (e) {}
 }
 
+// 成功・決定音
+function playSuccessSound() {
+    if (!isSoundEnabled) return;
+    initAudio();
+    try {
+        const now = audioCtx.currentTime;
+        const osc1 = audioCtx.createOscillator();
+        const osc2 = audioCtx.createOscillator();
+        const gain = audioCtx.createGain();
+
+        osc1.type = 'sine';
+        osc2.type = 'triangle';
+        osc1.frequency.setValueAtTime(523.25, now);
+        osc1.frequency.exponentialRampToValueAtTime(1046.50, now + 0.12);
+
+        osc2.frequency.setValueAtTime(659.25, now);
+        osc2.frequency.exponentialRampToValueAtTime(1318.51, now + 0.12);
+
+        gain.gain.setValueAtTime(0.04, now);
+        gain.gain.exponentialRampToValueAtTime(0.001, now + 0.12);
+
+        osc1.connect(gain);
+        osc2.connect(gain);
+        gain.connect(audioCtx.destination);
+
+        osc1.start(now);
+        osc2.start(now);
+        osc1.stop(now + 0.12);
+        osc2.stop(now + 0.12);
+    } catch (e) {}
+}
+
+// エラー・警告音
+function playErrorSound() {
+    if (!isSoundEnabled) return;
+    initAudio();
+    try {
+        const now = audioCtx.currentTime;
+        const osc = audioCtx.createOscillator();
+        const gain = audioCtx.createGain();
+
+        osc.type = 'sawtooth';
+        osc.frequency.setValueAtTime(160, now);
+        osc.frequency.linearRampToValueAtTime(80, now + 0.18);
+
+        gain.gain.setValueAtTime(0.06, now);
+        gain.gain.exponentialRampToValueAtTime(0.001, now + 0.18);
+
+        osc.connect(gain);
+        gain.connect(audioCtx.destination);
+
+        osc.start(now);
+        osc.stop(now + 0.18);
+    } catch (e) {}
+}
+
+// タイピング打鍵音
+function playKeyPressSound() {
+    if (!isSoundEnabled) return;
+    initAudio();
+    try {
+        const now = audioCtx.currentTime;
+        const osc = audioCtx.createOscillator();
+        const gain = audioCtx.createGain();
+        osc.type = 'sine';
+        osc.frequency.setValueAtTime(700 + Math.random() * 300, now);
+        gain.gain.setValueAtTime(0.02, now);
+        gain.gain.exponentialRampToValueAtTime(0.001, now + 0.025);
+        osc.connect(gain);
+        gain.connect(audioCtx.destination);
+        osc.start(now);
+        osc.stop(now + 0.025);
+    } catch (e) {}
+}
+
+// 全ボタン・リンクのクリックイベントにSEをアタッチ
+document.addEventListener('click', (e) => {
+    const target = e.target.closest('button, a, input[type="submit"], .float-tag');
+    if (target && target.id !== 'soundToggle') {
+        playClickSound();
+    }
+});
+
 const soundToggleBtn = document.getElementById('soundToggle');
 const soundIcon = document.getElementById('soundIcon');
+
+if (isSoundEnabled) {
+    soundIcon.className = 'fa-solid fa-volume-high text-cyber-green';
+}
 
 soundToggleBtn.addEventListener('click', () => {
     isSoundEnabled = !isSoundEnabled;
     if (isSoundEnabled) {
         initAudio();
         soundIcon.className = 'fa-solid fa-volume-high text-cyber-green';
-        playBeep(880, 0.1);
+        playSuccessSound();
         showToast('Audio Feedback Enabled', 'success');
     } else {
         soundIcon.className = 'fa-solid fa-volume-xmark';
@@ -159,7 +248,9 @@ soundToggleBtn.addEventListener('click', () => {
 // 4. CUSTOM TOAST NOTIFICATION SYSTEM
 // ----------------------------------------------------
 function showToast(message, type = 'info') {
-    playBeep(type === 'error' ? 300 : 880, 0.08);
+    if (type === 'success') playSuccessSound();
+    else if (type === 'error') playErrorSound();
+    else playClickSound();
 
     const toastContainer = document.getElementById('toastContainer');
     const toast = document.createElement('div');
@@ -252,7 +343,7 @@ const commands = {
 };
 
 terminalInput.addEventListener('keydown', (e) => {
-    playBeep(650 + Math.random() * 200, 0.02);
+    playKeyPressSound();
 
     if (e.key === 'Enter') {
         const rawInput = terminalInput.value.trim();
@@ -267,6 +358,7 @@ terminalInput.addEventListener('keydown', (e) => {
 
         if (cmd === 'clear') {
             terminalScreen.innerHTML = '';
+            playSuccessSound();
         } else if (cmd.startsWith('theme ')) {
             const themeColor = cmd.split(' ')[1];
             if (['cyan', 'green', 'magenta', 'amber'].includes(themeColor)) {
@@ -277,22 +369,27 @@ terminalInput.addEventListener('keydown', (e) => {
                 showToast(`Theme switched to ${themeColor.toUpperCase()}`, 'success');
             } else {
                 outputLine.innerHTML = 'Usage: theme [cyan | green | magenta | amber]';
+                playErrorSound();
             }
             terminalScreen.appendChild(outputLine);
         } else if (cmd === 'matrix') {
             isMatrixActive = !isMatrixActive;
             outputLine.innerHTML = commands['matrix'];
             terminalScreen.appendChild(outputLine);
+            playSuccessSound();
         } else if (cmd === 'join') {
             openJoinModal();
             outputLine.innerHTML = 'Opening join modal window...';
             terminalScreen.appendChild(outputLine);
+            playSuccessSound();
         } else if (commands[cmd]) {
             outputLine.innerHTML = commands[cmd];
             terminalScreen.appendChild(outputLine);
+            playSuccessSound();
         } else if (cmd !== '') {
             outputLine.innerHTML = `<span class="text-cyber-magenta">Command not found: '${escapeHTML(cmd)}'. Type 'help' for options.</span>`;
             terminalScreen.appendChild(outputLine);
+            playErrorSound();
         }
 
         terminalInput.value = '';
@@ -310,12 +407,12 @@ function escapeHTML(str) {
 // 7. JOIN / CONTACT MODAL HANDLERS
 // ----------------------------------------------------
 function openJoinModal() {
-    playBeep(700, 0.06);
+    playSuccessSound();
     document.getElementById('joinModal').classList.remove('hidden');
 }
 
 function closeJoinModal() {
-    playBeep(400, 0.04);
+    playClickSound();
     document.getElementById('joinModal').classList.add('hidden');
 }
 
@@ -330,7 +427,7 @@ function handleContactSubmit(e) {
     closeJoinModal();
 }
 
-// モバイルメニュー制御 & リンクタップで閉じる処理
+// モバイルメニュー制御
 const mobileMenuBtn = document.getElementById('mobileMenuBtn');
 const mobileMenu = document.getElementById('mobileMenu');
 mobileMenuBtn.addEventListener('click', () => {
