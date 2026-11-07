@@ -4,11 +4,16 @@
     --theme-accent-glow: rgba(0, 229, 255, 0.3);
 }
 
+* {
+    -webkit-tap-highlight-color: transparent;
+}
+
 body {
     background-color: #050811;
     color: #c6d5ec;
     font-family: 'JetBrains Mono', monospace;
     overflow-x: hidden;
+    width: 100%;
 }
 
 /* スキャンライン */
@@ -80,16 +85,16 @@ body {
     100% { clip: rect(30px, 9999px, 40px, 0); }
 }
 
-/* 背景浮遊アイコン＆言語タグ */
+/* 背景浮遊アイコン＆言語タグ (モバイル最適化) */
 .float-tag {
     position: absolute;
-    padding: 8px 16px;
-    border-radius: 8px;
+    padding: 6px 12px;
+    border-radius: 6px;
     background: rgba(16, 23, 40, 0.55);
     backdrop-filter: blur(6px);
     border: 1px solid rgba(28, 40, 68, 0.8);
     font-family: 'JetBrains Mono', monospace;
-    font-size: 0.75rem;
+    font-size: 0.7rem;
     font-weight: 700;
     letter-spacing: 0.05em;
     pointer-events: auto;
@@ -100,14 +105,22 @@ body {
 .float-tag:hover {
     border-color: var(--theme-accent);
     box-shadow: 0 0 15px var(--theme-accent-glow);
-    transform: scale(1.15) !important;
+    transform: scale(1.1) !important;
     z-index: 20;
+}
+
+@media (max-width: 640px) {
+    .float-tag {
+        font-size: 0.65rem;
+        padding: 4px 8px;
+        opacity: 0.65;
+    }
 }
 
 @keyframes floatBob {
     0% { transform: translateY(0px) rotate(0deg); }
-    50% { transform: translateY(-20px) rotate(2deg); }
-    100% { transform: translateY(12px) rotate(-2deg); }
+    50% { transform: translateY(-15px) rotate(1.5deg); }
+    100% { transform: translateY(10px) rotate(-1.5deg); }
 }
 
 /* 点滅アニメーション */

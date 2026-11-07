@@ -10,7 +10,7 @@ const revealObserver = new IntersectionObserver((entries) => {
         }
     });
 }, {
-    threshold: 0.12
+    threshold: 0.08
 });
 
 revealElements.forEach(el => revealObserver.observe(el));
@@ -22,25 +22,30 @@ const floatTags = document.querySelectorAll('.float-tag');
 let mouseX = 0, mouseY = 0;
 let targetX = 0, targetY = 0;
 
-document.addEventListener('mousemove', (e) => {
-    mouseX = (e.clientX - window.innerWidth / 2) / (window.innerWidth / 2);
-    mouseY = (e.clientY - window.innerHeight / 2) / (window.innerHeight / 2);
-});
+// モバイルで過剰に動かないよう調整
+const isMobile = window.innerWidth < 768;
 
-function animateParallax() {
-    targetX += (mouseX - targetX) * 0.05;
-    targetY += (mouseY - targetY) * 0.05;
-
-    floatTags.forEach(tag => {
-        const speed = parseFloat(tag.getAttribute('data-speed')) || 1.5;
-        const offsetX = targetX * speed * 25;
-        const offsetY = targetY * speed * 25;
-        tag.style.transform = `translate3d(${offsetX}px, ${offsetY}px, 0)`;
+if (!isMobile) {
+    document.addEventListener('mousemove', (e) => {
+        mouseX = (e.clientX - window.innerWidth / 2) / (window.innerWidth / 2);
+        mouseY = (e.clientY - window.innerHeight / 2) / (window.innerHeight / 2);
     });
 
-    requestAnimationFrame(animateParallax);
+    function animateParallax() {
+        targetX += (mouseX - targetX) * 0.05;
+        targetY += (mouseY - targetY) * 0.05;
+
+        floatTags.forEach(tag => {
+            const speed = parseFloat(tag.getAttribute('data-speed')) || 1.5;
+            const offsetX = targetX * speed * 20;
+            const offsetY = targetY * speed * 20;
+            tag.style.transform = `translate3d(${offsetX}px, ${offsetY}px, 0)`;
+        });
+
+        requestAnimationFrame(animateParallax);
+    }
+    animateParallax();
 }
-animateParallax();
 
 // ----------------------------------------------------
 // 2. DIGITAL RAIN (MATRIX CANVAS ANIMATION)
@@ -173,7 +178,7 @@ function showToast(message, type = 'info') {
         icon = 'fa-triangle-exclamation';
     }
 
-    toast.className = `px-4 py-2.5 rounded bg-cyber-panel border ${borderColor} text-white flex items-center space-x-2.5 shadow-2xl pointer-events-auto transition-all duration-300 opacity-0 transform translate-y-2`;
+    toast.className = `px-3.5 py-2.5 rounded bg-cyber-panel border ${borderColor} text-white flex items-center space-x-2.5 shadow-2xl pointer-events-auto transition-all duration-300 opacity-0 transform translate-y-2`;
     toast.innerHTML = `<i class="fa-solid ${icon} ${textColor}"></i> <span>${escapeHTML(message)}</span>`;
 
     toastContainer.appendChild(toast);
@@ -229,14 +234,14 @@ function typeLoop() {
 typeLoop();
 
 // ----------------------------------------------------
-// 6. INTERACTIVE TERMINAL LOGIC WITH DYNAMIC THEME
+// 6. INTERACTIVE TERMINAL LOGIC
 // ----------------------------------------------------
 const terminalScreen = document.getElementById('terminalScreen');
 const terminalInput = document.getElementById('terminalInput');
 
 const commands = {
     'help': 'Available commands: <span class="text-cyber-green">about</span>, <span class="text-cyber-green">skills</span>, <span class="text-cyber-green">ethics</span>, <span class="text-cyber-green">projects</span>, <span class="text-cyber-green">matrix</span>, <span class="text-cyber-green">theme [color]</span>, <span class="text-cyber-green">join</span>, <span class="text-cyber-green">clear</span>, <span class="text-cyber-green">whoami</span>, <span class="text-cyber-green">easteregg</span>',
-    'about': 'NEO_ZERO is a cyber-security research &amp; creative collective combining real-world ethical hacking with cyber-punk lore.',
+    'about': 'NEO_ZERO is a hacker &amp; tech collective operating in LINE OpenChat under Shie Hassaikai lineage.',
     'skills': 'Tech Stack: Python, Rust, C++, Go, Docker, Assembly, Three.js, PyTorch, Ghidra, Linux eBPF.',
     'ethics': 'Code of Conduct: 1. White-Hat Only  2. Knowledge Sharing  3. Mutual Respect  4. Privacy First.',
     'projects': 'Active Ops: Project ShadowVault (Rust ZKP Storage), ZeroCTF Framework (Learning Platform).',
@@ -325,14 +330,21 @@ function handleContactSubmit(e) {
     closeJoinModal();
 }
 
-// Mobile Menu Toggle
+// モバイルメニュー制御 & リンクタップで閉じる処理
 const mobileMenuBtn = document.getElementById('mobileMenuBtn');
 const mobileMenu = document.getElementById('mobileMenu');
 mobileMenuBtn.addEventListener('click', () => {
     mobileMenu.classList.toggle('hidden');
 });
 
-// Close Modals on ESC key
+const mobileLinks = mobileMenu.querySelectorAll('a');
+mobileLinks.forEach(link => {
+    link.addEventListener('click', () => {
+        mobileMenu.classList.add('hidden');
+    });
+});
+
+// ESCキーでモーダル閉じる
 window.addEventListener('keydown', (e) => {
     if (e.key === 'Escape') {
         closeJoinModal();
